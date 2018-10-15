@@ -12,7 +12,6 @@ use libp2p::core::Transport;
 use libp2p::core::upgrade;
 use libp2p::secio::SecioOutput;
 use libp2p::tcp::TcpConfig;
-use tokio_codec::{BytesCodec, Framed};
 
 fn main() {
 
@@ -37,15 +36,16 @@ fn main() {
     let (swarm_controller, swarm_future) = libp2p::core::swarm(
         transport.clone(),
         |echo, _client_addr| {
-            println!("Sending \"hello world\" to listener");
             let finished_tx = finished_tx.take();
-            echo.send("hello world".into())
-                // Then listening for one message from the remote.
+            echo.send(golem_libp2p::DUMMY_MSG.into())
                 .and_then(|echo| {
-                    echo.into_future().map_err(|(e, _)| e).map(|(n,_ )| n)
+                    echo.into_future()
+						.map_err(|(e, _)| e)
+						.map(|(n,_ )| n)
                 })
                 .and_then(move |message| {
-                    println!("Received message from listener: {:?}", message.unwrap());
+                    println!("Received message from listener: {:?}", 
+						message.unwrap());
                     if let Some(finished_tx) = finished_tx {
                         finished_tx.send(()).unwrap();
                     }

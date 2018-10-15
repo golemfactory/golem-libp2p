@@ -39,14 +39,21 @@ fn main() {
                     .map_err(|(e, _)| e)
                     .and_then(move |(msg, rest)| {
                         if let Some(msg) = msg {
-                            println!(
-                                "Received a message: {:?}\n => Sending back \
-                                 identical message to remote", msg
-                            );
-                            Box::new(rest.send(msg.freeze()).map(|m| Loop::Continue(m)))
-                                as Box<Future<Item = _, Error = _>>
+							if msg == golem_libp2p::DUMMY_MSG {
+	                            println!("Received a msg {:?}", msg);
+    	                        Box::new(
+									rest.send(
+										golem_libp2p::DUMMY_MSG2.into())
+											.map(|m| Loop::Continue(m))
+								) as Box<Future<Item = _, Error = _>>
+							} else {
+								println!("Unknown message: {:?}", msg);
+								Box::new(rest.send("".into())
+									.map(|m| Loop::Continue(m)))
+									as Box<Future<Item = _, Error = _>>
+							}
                         } else {
-                            println!("Received EOF\n => Dropping connection");
+                            println!("Dropping connection");
                             Box::new(Ok(Loop::Break(())).into_future())
                                 as Box<Future<Item = _, Error = _>>
                         }

@@ -11,7 +11,8 @@ use tokio_io::{AsyncRead, AsyncWrite};
 
 pub const DEFAULT_ADDRESS: &str = "/ip4/127.0.0.1/tcp/10333";
 pub const PROTOCOL: &str = "/echo/1.0.0";
-
+pub const DUMMY_MSG: &str = "SYN";
+pub const DUMMY_MSG2: &str = "ACK";
 
 pub fn get_address_from_arg() -> String {
 	env::args().nth(1).unwrap_or(DEFAULT_ADDRESS.to_owned())
