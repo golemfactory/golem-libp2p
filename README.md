@@ -1,2 +1,3 @@
-# golem-libp2p
-Golem rust-libp2p integration 
+# Golem repostiory with libp2p usage
+
+[Golem](https://github.com/golemfactory/golem/) usage of [libp2p rust implementation](https://github.com/rust-libp2p). 
