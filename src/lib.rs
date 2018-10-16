@@ -1,3 +1,4 @@
+extern crate gu_ethkey;
 extern crate libp2p;
 extern crate tokio_codec;
 extern crate tokio_io;

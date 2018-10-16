@@ -6,7 +6,8 @@ authors = ["badb <a.skrzy@gmail.com>"]
 [dependencies]
 bytes = "0.4"
 futures = "0.1"
-libp2p = { git = "https://github.com/libp2p/rust-libp2p" }
+gu-ethkey = { git = "https://github.com/golemfactory/golem-unlimited" }
+libp2p = { git = "https://github.com/badb/rust-libp2p", branch="old_api_ring_bump"}
 tokio-codec = "0.1"
 tokio-current-thread = "0.1"
 tokio-io = "0.1"
