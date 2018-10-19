@@ -1,8 +1,10 @@
+extern crate ethkey;
 extern crate gu_ethkey;
 extern crate libp2p;
 extern crate tokio_codec;
 extern crate tokio_io;
 
+use gu_ethkey::{EthKeyStore, SafeEthKey};
 use std::env;
 use std::io::Error as IoError;
 use libp2p::SimpleProtocol;
@@ -14,10 +16,23 @@ pub const DEFAULT_ADDRESS: &str = "/ip4/127.0.0.1/tcp/10333";
 pub const PROTOCOL: &str = "/echo/1.0.0";
 pub const DUMMY_MSG: &str = "SYN";
 pub const DUMMY_MSG2: &str = "ACK";
+pub const KEYSTORE_PATH: &str = "keystore.json";
+pub const PASSWD: &str = "changeme";
+
 
 pub fn get_address_from_arg() -> String {
 	env::args().nth(1).unwrap_or(DEFAULT_ADDRESS.to_owned())
 }
+
+pub fn generate_keys_with_gu() -> SecioKeyPair {
+	let pass = PASSWD.into();
+	let keys = Box::leak(
+		SafeEthKey::load_or_generate(KEYSTORE_PATH, &pass)
+			.expect("Wrongly generated keys"));
+	let s: [u8; 32] = (*keys).key_pair.secret().0;
+	SecioKeyPair::secp256k1_raw_key(&s).expect("Wrong key format")
+}
+
 
 pub fn generate_keypair() -> SecioKeyPair {
 	SecioKeyPair::secp256k1_generated().expect("Wrongly generated keys")
@@ -25,6 +40,10 @@ pub fn generate_keypair() -> SecioKeyPair {
 
 pub fn get_secio_upgrade() -> SecioConfig {
 	SecioConfig::new(generate_keypair())
+}
+
+pub fn get_secio_upgrade_with_gu() -> SecioConfig {
+	SecioConfig::new(generate_keys_with_gu())
 }
 
 pub fn get_protocol<TSocket>(name: String) -> 

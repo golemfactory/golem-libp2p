@@ -18,7 +18,7 @@ fn main() {
  
     let transport = TcpConfig::new()
         .with_upgrade(
-			upgrade::map(golem_libp2p::get_secio_upgrade(), 
+			upgrade::map(golem_libp2p::get_secio_upgrade_with_gu(), 
 				|out: SecioOutput<_>| out.stream)
         )
         .with_upgrade(libp2p::mplex::MplexConfig::new())
