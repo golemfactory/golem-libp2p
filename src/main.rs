@@ -4,7 +4,6 @@ use std::env;
 use std::marker::PhantomData;
 
 use futures::Async;
-use futures::future::poll_fn;
 use futures::stream::Stream;
 
 use libp2p::core::PeerId;
@@ -83,14 +82,8 @@ fn main() {
         Swarm::dial_addr(&mut swarm, addr).unwrap();
     }
 
-    tokio::run(poll_fn(move || -> Result<_, ()> {
-        loop {
-            match swarm.poll().unwrap() {
-                Async::Ready(Some(_)) => {},
-                Async::Ready(None) | Async::NotReady => break
-            }
-        }
-
-        Ok(Async::NotReady)
-    }));
+    tokio::run(swarm
+        .map_err(|e| println!("{}", e))
+        .for_each(|_| Ok(()))
+    );
 }
