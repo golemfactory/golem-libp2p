@@ -1,0 +1,10 @@
+[package] 
+name = "keys-manager"
+version = "0.1.0"
+authors = ["badb <a.skrzy@gmail.com>"]
+edition = "2018"
+
+[dependencies]
+libp2p ="0.3.0"
+rand = "0.4"
+secp256k1 = { version = "0.12", features = ["rand"]}

@@ -7,7 +7,7 @@ use std::marker::PhantomData;
 use futures::Async;
 use futures::stream::Stream;
 
-use keys_manager::generate_keys;
+use keys_manager::generate_key;
 use libp2p::core::PeerId;
 use libp2p::core::multiaddr::Multiaddr;
 use libp2p::core::nodes::raw_swarm::ConnectedPoint;
@@ -61,7 +61,7 @@ where
 }
 
 fn main() {
-    let local_private_key = generate_keys();
+    let local_private_key = generate_key();
     let local_peer_id = local_private_key.to_peer_id();
     println!("My ID: {:?}", local_peer_id);
 

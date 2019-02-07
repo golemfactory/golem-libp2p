@@ -619,6 +619,8 @@ name = "keys-manager"
 version = "0.1.0"
 dependencies = [
  "libp2p 0.3.1 (registry+https://github.com/rust-lang/crates.io-index)",
+ "rand 0.4.6 (registry+https://github.com/rust-lang/crates.io-index)",
+ "secp256k1 0.12.2 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
 [[package]]
