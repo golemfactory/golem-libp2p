@@ -5,6 +5,7 @@ authors = ["Adam Wierzbicki <awierzbicki@golem.network>"]
 edition = "2018"
 
 [dependencies]
+keys-manager = { path = "./keys" }
 futures = "0.1"
 libp2p = "0.3.0"
 tokio = "0.1"

@@ -1,3 +1,4 @@
+extern crate keys_manager;
 extern crate libp2p;
 
 use std::env;
@@ -6,12 +7,12 @@ use std::marker::PhantomData;
 use futures::Async;
 use futures::stream::Stream;
 
+use keys_manager::generate_keys;
 use libp2p::core::PeerId;
 use libp2p::core::multiaddr::Multiaddr;
 use libp2p::core::nodes::raw_swarm::ConnectedPoint;
 use libp2p::core::protocols_handler::DummyProtocolsHandler;
 use libp2p::core::swarm::{NetworkBehaviour, NetworkBehaviourAction, PollParameters, Swarm};
-use libp2p::secio::SecioKeyPair;
 
 use tokio;
 use tokio_io::{AsyncRead, AsyncWrite};
@@ -60,7 +61,7 @@ where
 }
 
 fn main() {
-    let local_private_key = SecioKeyPair::ed25519_generated().unwrap();
+    let local_private_key = generate_keys();
     let local_peer_id = local_private_key.to_peer_id();
     println!("My ID: {:?}", local_peer_id);
 
