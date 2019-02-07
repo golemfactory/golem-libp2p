@@ -83,7 +83,7 @@ fn main() {
     }
 
     tokio::run(swarm
-        .map_err(|e| println!("{}", e))
+        .map_err(|e| eprintln!("{}", e))
         .for_each(|_| Ok(()))
     );
 }
