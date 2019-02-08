@@ -39,10 +39,25 @@ where
     file.read(&mut raw_key)?;
     println!("raw_key2: {:?}", raw_key);
     let key = SecioKeyPair::secp256k1_raw_key(raw_key);
-    match(key) {
+    match key {
         Ok(v) => Ok(v),
-        Err(b) => Err(Error::new(ErrorKind::Other, 
+        Err(_) => Err(Error::new(ErrorKind::Other,
             "Key creationg error")),
+    }
+}
+
+pub fn load_or_generate<P>(file_path: &P) -> SecioKeyPair
+where
+    P: AsRef<Path>
+{
+    let res = load_key(file_path);
+    match res {
+        Ok(key) => key,
+        Err(_) => {
+            let raw_key = generate_raw();
+            save_raw_key(raw_key, file_path);
+            raw_to_key(raw_key)
+        }
     }
 }
 
@@ -52,8 +67,8 @@ where
 mod tests {
    
     use std::fs::remove_file; 
-    use super::{generate_key, generate_raw, load_key, raw_to_key, 
-                save_raw_key};
+    use super::{generate_key, generate_raw, load_key,
+                load_or_generate,raw_to_key, save_raw_key};
 
     #[test]
     fn test_generate_key() {
@@ -71,7 +86,7 @@ mod tests {
 
     #[test]
     fn test_load_key() {
-        let key = load_key(&"tests/keystoreX".to_owned());
+        let key = load_key(&"tests/keystore".to_owned());
         println!("public id: {:?}", key.unwrap().to_peer_id());
     }
 
@@ -83,6 +98,21 @@ mod tests {
         let _res = save_raw_key(raw_key, &file_name);
         let key = raw_to_key(raw_key);
         let key2 = load_key(&file_name).unwrap();
+        assert_eq!(key.to_peer_id(), key2.to_peer_id());
+        remove_file(file_name).expect("file remove failure");
+    }
+
+    #[test]
+    fn test_load_failure() {
+        let res = load_key(&"nonexisiting".to_owned());
+        assert!(res.is_err());
+    }
+
+    #[test]
+    fn test_load_or_generate() {
+        let file_name = "tests/newkeystore".to_owned();
+        let key = load_or_generate(&file_name);
+        let key2 = load_or_generate(&file_name);
         assert_eq!(key.to_peer_id(), key2.to_peer_id());
         remove_file(file_name).expect("file remove failure");
     }

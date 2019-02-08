@@ -7,7 +7,7 @@ use std::marker::PhantomData;
 use futures::Async;
 use futures::stream::Stream;
 
-use keys_manager::generate_key;
+use keys_manager::load_or_generate;
 use libp2p::core::PeerId;
 use libp2p::core::multiaddr::Multiaddr;
 use libp2p::core::nodes::raw_swarm::ConnectedPoint;
@@ -61,7 +61,10 @@ where
 }
 
 fn main() {
-    let local_private_key = generate_key();
+    let args: Vec<String> = env::args().collect();
+
+    let key_path = format!("keystore{}", args.len() - 1).to_owned();
+    let local_private_key = load_or_generate(&key_path);
     let local_peer_id = local_private_key.to_peer_id();
     println!("My ID: {:?}", local_peer_id);
 
@@ -69,7 +72,6 @@ fn main() {
     let behaviour = DummyBehaviour::new();
     let mut swarm = Swarm::new(transport, behaviour, local_peer_id);
 
-    let args: Vec<String> = env::args().collect();
 
     let port = args[1].parse::<u16>().unwrap();
     let addr = format!("/ip4/127.0.0.1/tcp/{}", port).parse().unwrap();
