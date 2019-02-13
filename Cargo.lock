@@ -483,6 +483,7 @@ dependencies = [
  "libp2p 0.3.1 (git+https://github.com/libp2p/rust-libp2p?rev=eeed66707b483448d641b9824a8f726121c5a334)",
  "tokio 0.1.15 (registry+https://github.com/rust-lang/crates.io-index)",
  "tokio-io 0.1.11 (registry+https://github.com/rust-lang/crates.io-index)",
+ "void 1.0.2 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
 [[package]]
