@@ -16,6 +16,7 @@ def run_kad_demo(listen_port, dial_port=None) -> Tuple[str, subprocess.Popen]:
         cmd,
         stdin=subprocess.PIPE,
         stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
         universal_newlines=True
     )
     peer_id = proc.stdout.readline().strip('\n')
@@ -54,11 +55,14 @@ def run(num_peers=10, num_queries=5, start_port=54321, random_connect=True):
         addresses[peer_id] = format_addr(port)
         print(f"Node {peer_id} listening on addr {addresses[peer_id]} "
               f"dialing addr {format_addr(dial_port)}")
+        time.sleep(0.05 * len(peer_ids) ** 1.5)
 
     queries: Dict[str, List[str]] = {}
 
-    print("Querying for node addresses...")
+    print("Sleeping...")
+    time.sleep(num_peers)
 
+    print("Querying for node addresses...")
     for peer_id in peer_ids:
         queries[peer_id] = []
         for _ in range(num_queries):
@@ -72,14 +76,19 @@ def run(num_peers=10, num_queries=5, start_port=54321, random_connect=True):
 
     print("Checking query outputs...")
     test_ok = True
+    total_events = 0
     for peer_id in peer_ids:
-        output, _ = processes[peer_id].communicate(timeout=5)
+        output, err = processes[peer_id].communicate(timeout=5)
         for query in queries[peer_id]:
             result = format_result(query, addresses[query])
             if result not in output:
                 test_ok = False
                 print(f"Result '{result}' not found in output of peer {peer_id}")
 
+        total_events += int(err.strip())
+
+    print(f"Total events: {total_events}")
+    print(f"Events per node: {(total_events / num_peers):.1f}")
     if test_ok:
         print("OK")
     else:

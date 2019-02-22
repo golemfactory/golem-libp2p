@@ -11,6 +11,7 @@ use tokio::prelude::{AsyncRead, AsyncWrite};
 
 pub struct Kademlia<TSubstream> {
     local_peer_id: PeerId,
+    bootstrapped: bool,
     kademlia: kad::Kademlia<TSubstream>
 }
 
@@ -18,6 +19,7 @@ impl <TSubstream> Kademlia<TSubstream> {
     pub fn new(local_peer_id: PeerId) -> Self {
         Kademlia {
             local_peer_id: local_peer_id.clone(),
+            bootstrapped: false,
             kademlia: kad::Kademlia::new(local_peer_id)
         }
     }
@@ -62,10 +64,17 @@ where
         // ***           ABLE TO LOCATE EACH OTHER              ***
         // ********************************************************
         match endpoint {
-            ConnectedPoint::Listener {..} => self.kademlia.find_node(peer_id),
-            ConnectedPoint::Dialer {..} => self.kademlia.find_node(self.local_peer_id.clone()),
+            ConnectedPoint::Listener {..} => {
+                if self.kademlia.addresses_of_peer(&peer_id).is_empty() {
+                    self.kademlia.find_node(peer_id);
+                }
+            }
+            ConnectedPoint::Dialer {..} if !self.bootstrapped => {
+                self.bootstrapped = true;
+                self.kademlia.find_node(self.local_peer_id.clone());
+            },
+            _ => {}
         }
-
     }
 
     fn inject_disconnected(&mut self, peer_id: &PeerId, endpoint: ConnectedPoint) {

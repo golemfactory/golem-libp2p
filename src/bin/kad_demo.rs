@@ -40,6 +40,8 @@ fn main() {
     let mut peer_addresses = HashMap::new();
     peer_addresses.insert(local_peer_id, addr);
 
+    let mut event_counter = 0;
+
     tokio::run(poll_fn(move || {
         loop {
             match framed_stdin.poll().unwrap() {
@@ -52,7 +54,10 @@ fn main() {
                         None => swarm.find_node(peer_id)
                     }
                 },
-                Async::Ready(None) => return Ok(Async::Ready(())),
+                Async::Ready(None) => {
+                    eprintln!("{}", event_counter);
+                    return Ok(Async::Ready(()))
+                },
                 Async::NotReady => break
             }
         }
@@ -60,6 +65,7 @@ fn main() {
         loop {
             match swarm.poll().unwrap() {
                 Async::Ready(Some(KademliaOut::Discovered { peer_id, mut addresses, .. })) => {
+                    event_counter += 1;
                     if addresses.len() > 0 && !peer_addresses.contains_key(&peer_id) {
                         let addr = addresses.remove(0);
                         println!("{} : {}", peer_id.to_base58(), addr);
@@ -67,7 +73,7 @@ fn main() {
                     }
                 }
                 Async::Ready(None) | Async::NotReady => break,
-                _ => {}
+                _ => { event_counter += 1 }
             }
         }
 
