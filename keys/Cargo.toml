@@ -5,6 +5,8 @@ authors = ["badb <a.skrzy@gmail.com>"]
 edition = "2018"
 
 [dependencies]
+ethsign = "0.4.0"
 libp2p ="0.3.0"
 rand = "0.4"
 secp256k1 = { version = "0.12", features = ["rand"]}
+serde_json = "1.0"

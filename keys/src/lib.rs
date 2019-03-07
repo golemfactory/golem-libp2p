@@ -1,9 +1,13 @@
+extern crate ethsign;
 extern crate libp2p;
 extern crate rand;
 
+use ethsign::{Protected, SecretKey};
+use ethsign::keyfile::{Bytes, KeyFile};
 use libp2p::secio::SecioKeyPair;
 use std::io::{Error, ErrorKind, prelude::*, Result};
 use std::fs::File;
+use std::num::NonZeroU32;
 use std::path::Path;
 
 pub fn generate_key() -> SecioKeyPair {
@@ -30,6 +34,26 @@ where
     println!("{:?}", x);
 }
 
+
+pub fn save_wallet<P>(key: [u8; 32], file_path: &P, password: String) 
+where
+    P: AsRef<Path>
+{
+    let mut file = File::create(file_path).expect("File not created");
+    let secret = SecretKey::from_raw(&key).expect("Secret Keys in wrong format");
+    let crypto = secret.to_crypto(&Protected::new(password.as_bytes().to_vec()), 
+                                  NonZeroU32::new(4096).unwrap()).unwrap();
+    let keyfile = KeyFile {
+        id: "".into(),
+        version: 3,
+        crypto: crypto,
+        address: Some(Bytes(secret.public().address().to_vec()))
+    };
+    let keyfile_str = serde_json::to_string(&keyfile).unwrap();
+    file.write_all(keyfile_str.as_bytes()).unwrap();
+}
+
+
 pub fn load_key<P>(file_path: &P) -> Result<SecioKeyPair>
 where
     P: AsRef<Path>
@@ -37,7 +61,6 @@ where
     let mut file = File::open(file_path)?;
     let mut raw_key = [0; 32];
     file.read(&mut raw_key)?;
-    println!("raw_key2: {:?}", raw_key);
     let key = SecioKeyPair::secp256k1_raw_key(raw_key);
     match key {
         Ok(v) => Ok(v),
@@ -45,6 +68,43 @@ where
             "Key creationg error")),
     }
 }
+
+pub fn load_wallet<P>(file_path: &P, password: String) -> Result<SecioKeyPair>
+where
+    P: AsRef<Path>
+{
+    let mut file = File::open(file_path)?;
+    let mut wallet = String::new();
+    file.read_to_string(&mut wallet)?;
+    let keyfile: KeyFile = serde_json::from_str(&wallet.as_str())
+        .unwrap();
+    let plain = keyfile.crypto.decrypt(
+        &Protected::new(password.as_bytes().to_vec())).unwrap();
+    let key = SecioKeyPair::secp256k1_raw_key(plain);
+    match key {
+        Ok(v) => Ok(v),
+        Err(_) => Err(Error::new(ErrorKind::Other,
+            "Key creation error"))
+    }
+}
+
+
+pub fn load_or_generate_wallet<P>(file_path: &P, password: String) -> SecioKeyPair 
+where
+    P: AsRef<Path>
+{
+    let res = load_wallet(file_path, password.clone());
+    match res {
+        Ok(key) => key,
+        Err(_) => {
+            let raw_key = generate_raw();
+            save_wallet(raw_key, file_path, password);
+            raw_to_key(raw_key)
+
+        }   
+    }
+}
+
 
 pub fn load_or_generate<P>(file_path: &P) -> SecioKeyPair
 where
@@ -68,7 +128,9 @@ mod tests {
    
     use std::fs::remove_file; 
     use super::{generate_key, generate_raw, load_key,
-                load_or_generate,raw_to_key, save_raw_key};
+                load_or_generate, load_or_generate_wallet, 
+                raw_to_key, load_wallet, 
+                save_raw_key};
 
     #[test]
     fn test_generate_key() {
@@ -117,4 +179,18 @@ mod tests {
         remove_file(file_name).expect("file remove failure");
     }
 
+
+    #[test]
+    fn test_load_wallet() {
+        let file_name = "tests/wallet.json".to_owned();
+        let key = load_wallet(&file_name, String::new());
+        println!("{:?}", key.unwrap().to_peer_id());
+    }
+
+    #[test]
+    fn test_load_or_generate_wallet() {
+        let file_name = "tests/wallet2.json".to_owned();
+        let key = load_or_generate_wallet(&file_name,  String::from("pass"));
+        println!("{:?}", key.to_peer_id());
+    }
 }

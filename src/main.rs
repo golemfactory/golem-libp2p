@@ -7,7 +7,7 @@ use std::marker::PhantomData;
 use futures::Async;
 use futures::stream::Stream;
 
-use keys_manager::load_or_generate;
+use keys_manager::load_or_generate_wallet;
 use libp2p::core::PeerId;
 use libp2p::core::multiaddr::Multiaddr;
 use libp2p::core::nodes::raw_swarm::ConnectedPoint;
@@ -63,8 +63,8 @@ where
 fn main() {
     let args: Vec<String> = env::args().collect();
 
-    let key_path = format!("keystore{}", args.len() - 1).to_owned();
-    let local_private_key = load_or_generate(&key_path);
+    let key_path = format!("wallet{}.json", args.len() - 1).to_owned();
+    let local_private_key = load_or_generate_wallet(&key_path, String::from("mypassword"));
     let local_peer_id = local_private_key.to_peer_id();
     println!("My ID: {:?}", local_peer_id);
 
