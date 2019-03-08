@@ -68,7 +68,7 @@ where
     SecioKeyPair::secp256k1_raw_key(raw_key)
 }
 
-pub fn load_wallet<P>(file_path: P, password: String) -> 
+pub fn load_wallet<P>(file_path: P, password: String) ->
     Result<SecioKeyPair, Box<dyn Error + Send + Sync>>
 where
     P: AsRef<Path>
@@ -83,7 +83,8 @@ where
 }
 
 
-pub fn load_or_generate_wallet<P>(file_path: &P, password: String) -> 
+pub fn load_or_generate_wallet<P>(file_path: &P, password: String, 
+                                  overwrite: bool) ->
     Result<SecioKeyPair,Box<dyn Error + Send + Sync>> 
 where
     P: AsRef<Path>
@@ -93,15 +94,16 @@ where
         Ok(_) => res,
         Err(_) => {
             let raw_key = generate_raw();
-            let _result = save_wallet(raw_key, file_path, password)?;
+            if overwrite {
+                let _result = save_wallet(raw_key, file_path, password)?;
+            }
             raw_to_key(raw_key)
-
         }   
     }
 }
 
 
-pub fn load_or_generate<P>(file_path: &P) -> 
+pub fn load_or_generate<P>(file_path: &P, overwrite: bool) -> 
     Result<SecioKeyPair, Box<dyn Error + Send + Sync>>
 where
     P: AsRef<Path>
@@ -111,7 +113,9 @@ where
         Ok(_) => res,
         Err(_) => {
             let raw_key = generate_raw();
-            let _result = save_raw_key(raw_key, file_path)?;
+            if overwrite {
+                let _result = save_raw_key(raw_key, file_path)?;
+            }
             raw_to_key(raw_key)
         }
     }
@@ -169,8 +173,8 @@ mod tests {
     #[test]
     fn test_load_or_generate() {
         let file_name = "tests/newkeystore".to_owned();
-        let key = load_or_generate(&file_name);
-        let key2 = load_or_generate(&file_name);
+        let key = load_or_generate(&file_name, true);
+        let key2 = load_or_generate(&file_name, true);
         assert_eq!(key.unwrap().to_peer_id(), key2.unwrap().to_peer_id());
         remove_file(file_name).expect("file remove failure");
     }
@@ -186,7 +190,7 @@ mod tests {
     #[test]
     fn test_load_or_generate_wallet() {
         let file_name = "tests/wallet2.json".to_owned();
-        let key = load_or_generate_wallet(&file_name,  String::from("pass"));
+        let key = load_or_generate_wallet(&file_name,  String::from("pass"), true);
         println!("{:?}", key.unwrap().to_peer_id());
         remove_file(file_name).expect("file remove failure");
     }
