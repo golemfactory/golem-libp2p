@@ -5,12 +5,18 @@ authors = ["Adam Wierzbicki <awierzbicki@golem.network>"]
 edition = "2018"
 
 [dependencies]
+bs58 = "0.2"
 futures = "0.1"
 libp2p = { git = "https://github.com/libp2p/rust-libp2p", rev = "eeed66707b483448d641b9824a8f726121c5a334" }
 tokio = "0.1"
 tokio-io = "0.1"
+tokio-stdin-stdout = "0.1"
 void = "1.0"
 
 [[bin]]
 name = "welcome"
 path = "src/bin/welcome_demo.rs"
+
+[[bin]]
+name = "kademlia"
+path = "src/bin/kad_demo.rs"
