@@ -51,7 +51,8 @@ fn main() {
 
     let port = args[1].parse::<u16>().unwrap(); 
     let key_path = format!("src/wallets/wallet{}.json", port).to_owned();
-    let local_private_key = load_or_generate_wallet(&key_path, String::from("mypassword"));
+    let local_private_key = load_or_generate_wallet(&key_path, String::from("mypassword"))
+        .expect("Key created");
     let local_peer_id = local_private_key.to_peer_id();
     println!("My ID: {:?}", local_peer_id);
 

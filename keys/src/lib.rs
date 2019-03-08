@@ -5,100 +5,95 @@ extern crate rand;
 use ethsign::{Protected, SecretKey};
 use ethsign::keyfile::{Bytes, KeyFile};
 use libp2p::secio::SecioKeyPair;
-use std::io::{Error, ErrorKind, prelude::*, Result};
+use std::error::Error;
+use std::io::prelude::*;
 use std::fs::File;
 use std::num::NonZeroU32;
 use std::path::Path;
 
-pub fn generate_key() -> SecioKeyPair {
-    let key = SecioKeyPair::secp256k1_generated();
-    key.expect("key generation failure") 
+pub fn generate_key() -> Result<SecioKeyPair, Box<dyn Error + Send + Sync>> {
+    SecioKeyPair::secp256k1_generated()
 }
 
 pub fn generate_raw() -> [u8; 32] {
-    let key: [u8; 32] = rand::random();
-    key
+    rand::random()
 }
 
-pub fn raw_to_key(raw_key: [u8; 32]) -> SecioKeyPair {
-    let key = SecioKeyPair::secp256k1_raw_key(raw_key);
-    key.expect("key generation failure")
+pub fn raw_to_key(raw_key: [u8; 32]) -> 
+    Result<SecioKeyPair, Box<dyn Error + Send + Sync>> 
+{
+    SecioKeyPair::secp256k1_raw_key(raw_key)
 }
 
-pub fn save_raw_key<P>(key: [u8; 32], file_path: &P) 
+pub fn save_raw_key<P>(key: [u8; 32], file_path: P) ->
+    Result<usize, Box<dyn Error + Send + Sync>>
 where
     P: AsRef<Path>
 {
-    let mut file = File::create(file_path).expect("File not created");
-    let x = file.write(&key);
-    println!("{:?}", x);
+    let mut file = File::create(file_path)?;
+    let res = file.write(&key)?;
+    Ok(res)
 }
 
 
-pub fn save_wallet<P>(key: [u8; 32], file_path: &P, password: String) 
+pub fn save_wallet<P>(key: [u8; 32], file_path: P, password: String) -> 
+    Result<(), Box<dyn Error + Send + Sync>>
 where
     P: AsRef<Path>
 {
-    let mut file = File::create(file_path).expect("File not created");
-    let secret = SecretKey::from_raw(&key).expect("Secret Keys in wrong format");
+    let secret = SecretKey::from_raw(&key)?;
     let crypto = secret.to_crypto(&Protected::new(password.as_bytes().to_vec()), 
-                                  NonZeroU32::new(4096).unwrap()).unwrap();
+                                  NonZeroU32::new(4096).unwrap())?;
     let keyfile = KeyFile {
         id: "".into(),
         version: 3,
         crypto: crypto,
         address: Some(Bytes(secret.public().address().to_vec()))
     };
-    let keyfile_str = serde_json::to_string(&keyfile).unwrap();
-    file.write_all(keyfile_str.as_bytes()).unwrap();
+    let keyfile_str = serde_json::to_string(&keyfile)?;
+    let mut file = File::create(file_path)?;
+    let res = file.write_all(keyfile_str.as_bytes())?;
+    Ok(res)
 }
 
 
-pub fn load_key<P>(file_path: &P) -> Result<SecioKeyPair>
+pub fn load_key<P>(file_path: P) -> 
+    Result<SecioKeyPair, Box<dyn Error + Send + Sync>>
 where
     P: AsRef<Path>
 {
     let mut file = File::open(file_path)?;
     let mut raw_key = [0; 32];
     file.read(&mut raw_key)?;
-    let key = SecioKeyPair::secp256k1_raw_key(raw_key);
-    match key {
-        Ok(v) => Ok(v),
-        Err(_) => Err(Error::new(ErrorKind::Other,
-            "Key creationg error")),
-    }
+    SecioKeyPair::secp256k1_raw_key(raw_key)
 }
 
-pub fn load_wallet<P>(file_path: &P, password: String) -> Result<SecioKeyPair>
+pub fn load_wallet<P>(file_path: P, password: String) -> 
+    Result<SecioKeyPair, Box<dyn Error + Send + Sync>>
 where
     P: AsRef<Path>
 {
     let mut file = File::open(file_path)?;
     let mut wallet = String::new();
     file.read_to_string(&mut wallet)?;
-    let keyfile: KeyFile = serde_json::from_str(&wallet.as_str())
-        .unwrap();
+    let keyfile: KeyFile = serde_json::from_str(&wallet.as_str())?;
     let plain = keyfile.crypto.decrypt(
-        &Protected::new(password.as_bytes().to_vec())).unwrap();
-    let key = SecioKeyPair::secp256k1_raw_key(plain);
-    match key {
-        Ok(v) => Ok(v),
-        Err(_) => Err(Error::new(ErrorKind::Other,
-            "Key creation error"))
-    }
+        &Protected::new(password.as_bytes().to_vec()))?;
+    SecioKeyPair::secp256k1_raw_key(plain)
 }
 
 
-pub fn load_or_generate_wallet<P>(file_path: &P, password: String) -> SecioKeyPair 
+pub fn load_or_generate_wallet<P>(file_path: &P, password: String) -> 
+    Result<SecioKeyPair,Box<dyn Error + Send + Sync>> 
 where
     P: AsRef<Path>
 {
     let res = load_wallet(file_path, password.clone());
     match res {
-        Ok(key) => key,
+        Ok(_) => res,
         Err(_) => {
             let raw_key = generate_raw();
-            save_wallet(raw_key, file_path, password);
+            let _result = save_wallet(raw_key, file_path, password)?;
             raw_to_key(raw_key)
 
         }   
@@ -106,16 +101,17 @@ where
 }
 
 
-pub fn load_or_generate<P>(file_path: &P) -> SecioKeyPair
+pub fn load_or_generate<P>(file_path: &P) -> 
+    Result<SecioKeyPair, Box<dyn Error + Send + Sync>>
 where
     P: AsRef<Path>
 {
     let res = load_key(file_path);
     match res {
-        Ok(key) => key,
+        Ok(_) => res,
         Err(_) => {
             let raw_key = generate_raw();
-            save_raw_key(raw_key, file_path);
+            let _result = save_raw_key(raw_key, file_path)?;
             raw_to_key(raw_key)
         }
     }
@@ -135,7 +131,7 @@ mod tests {
     #[test]
     fn test_generate_key() {
         let key = generate_key();
-        println!("public id {:?}", key.to_peer_id());
+        println!("public id {:?}", key.unwrap().to_peer_id());
     }
 
     #[test]
@@ -159,8 +155,8 @@ mod tests {
         let file_name = "tests/keystore_save".to_owned();
         let _res = save_raw_key(raw_key, &file_name);
         let key = raw_to_key(raw_key);
-        let key2 = load_key(&file_name).unwrap();
-        assert_eq!(key.to_peer_id(), key2.to_peer_id());
+        let key2 = load_key(&file_name);
+        assert_eq!(key.unwrap().to_peer_id(), key2.unwrap().to_peer_id());
         remove_file(file_name).expect("file remove failure");
     }
 
@@ -175,7 +171,7 @@ mod tests {
         let file_name = "tests/newkeystore".to_owned();
         let key = load_or_generate(&file_name);
         let key2 = load_or_generate(&file_name);
-        assert_eq!(key.to_peer_id(), key2.to_peer_id());
+        assert_eq!(key.unwrap().to_peer_id(), key2.unwrap().to_peer_id());
         remove_file(file_name).expect("file remove failure");
     }
 
@@ -191,6 +187,7 @@ mod tests {
     fn test_load_or_generate_wallet() {
         let file_name = "tests/wallet2.json".to_owned();
         let key = load_or_generate_wallet(&file_name,  String::from("pass"));
-        println!("{:?}", key.to_peer_id());
+        println!("{:?}", key.unwrap().to_peer_id());
+        remove_file(file_name).expect("file remove failure");
     }
 }
