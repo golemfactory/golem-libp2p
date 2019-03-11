@@ -1,0 +1,12 @@
+[package] 
+name = "keys-manager"
+version = "0.1.0"
+authors = ["badb <a.skrzy@gmail.com>"]
+edition = "2018"
+
+[dependencies]
+ethsign = "0.4.0"
+libp2p = { git = "https://github.com/libp2p/rust-libp2p", rev = "eeed66707b483448d641b9824a8f726121c5a334" }
+rand = "0.4"
+secp256k1 = { version = "0.12", features = ["rand"]}
+serde_json = "1.0"

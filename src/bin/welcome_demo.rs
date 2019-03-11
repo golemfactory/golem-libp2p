@@ -2,9 +2,9 @@ use std::env;
 
 use futures::stream::Stream;
 
+use keys_manager::load_or_generate_wallet;
 use libp2p::NetworkBehaviour;
 use libp2p::core::swarm::{NetworkBehaviourEventProcess, Swarm};
-use libp2p::secio::SecioKeyPair;
 
 use tokio;
 use tokio_io::{AsyncRead, AsyncWrite};
@@ -47,7 +47,14 @@ where
 }
 
 fn main() {
-    let local_private_key = SecioKeyPair::ed25519_generated().unwrap();
+    let args: Vec<String> = env::args().collect();
+
+    let port = args[1].parse::<u16>().unwrap(); 
+    let key_path = format!("src/wallets/wallet{}.json", port).to_owned();
+    let local_private_key = load_or_generate_wallet(&key_path, 
+                                                    String::from("mypassword"), 
+                                                    true)
+        .expect("Key created");
     let local_peer_id = local_private_key.to_peer_id();
     println!("My ID: {:?}", local_peer_id);
 
@@ -55,9 +62,7 @@ fn main() {
     let behaviour = MyBehaviour::new("Hello!".to_owned());
     let mut swarm = Swarm::new(transport, behaviour, local_peer_id);
 
-    let args: Vec<String> = env::args().collect();
 
-    let port = args[1].parse::<u16>().unwrap();
     let addr = format!("/ip4/127.0.0.1/tcp/{}", port).parse().unwrap();
     println!("Listening on {}...", addr);
     Swarm::listen_on(&mut swarm, addr).unwrap();
