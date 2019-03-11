@@ -50,9 +50,8 @@ where
         crypto: crypto,
         address: Some(Bytes(secret.public().address().to_vec()))
     };
-    let keyfile_str = serde_json::to_string(&keyfile)?;
-    let mut file = File::create(file_path)?;
-    let res = file.write_all(keyfile_str.as_bytes())?;
+    let file = File::create(file_path)?;
+    let res = serde_json::to_writer(file, &keyfile)?;
     Ok(res)
 }
 
